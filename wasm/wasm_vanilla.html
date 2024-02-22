@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+<body>
+  <div>Wasm Test</div>
+  <script type="module">
+    const importObject = {
+      env: {
+        date_now: Date.now,
+        console_log: (ptr, len) => {
+          const chars = new Uint16Array(instance_2.exports.memory.buffer, ptr, len);
+          console.log(String.fromCharCode(...chars));
+        },
+      },
+      wasi_snapshot_preview1: {
+        fd_write: (i32a, i32b, i32c, i32d) => { return 0 },
+        environ_get: (i32a, i32b) => { return 0 },
+        environ_sizes_get: (i32a, i32b) => { return 0 },
+        proc_exit: (i32) => console.log(i32),
+      },
+    };
+    const module_1 = await WebAssembly.compileStreaming(fetch('wasm_vanilla/target/wasm32-unknown-unknown/release/wasm_vanilla.wasm'));
+    const module_2 = await WebAssembly.compileStreaming(fetch('wasm_vanilla/target/wasm32-wasi/release/wasm_vanilla.wasm'));
+    
+    console.log(module_1);
+    console.log(module_2);
+    
+    const instance_1 = await WebAssembly.instantiate(module_1, importObject);
+    const instance_2 = await WebAssembly.instantiate(module_1, importObject);
+    const { add, get_timestamp, console_write } = instance_2.exports;
+
+    console.log(instance_1.exports.add(1, 1), instance_2.exports.add(1, 1), add(1,2));
+    console.log(get_timestamp())
+    console_write()
+
+    /* 
+      ***途中、arrayBuffer欲しいとき***
+      const response = await fetch("./wasm_vanilla.wasm");
+      const bytes = await response.arrayBuffer();
+      const instance = await WebAssembly.instantiate(bytes, imports);
+
+      ***webviewでhost側で読み込む場合***  
+      const raw = await chrome.webview.hostObjects.Hoge.ReadAllBytes("./wasm_vanilla.wasm");
+      const bytes = new Uint8Array(raw);
+    */
+
+
+  </script>
+</body>
+</html>
