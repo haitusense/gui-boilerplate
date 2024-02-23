@@ -128,8 +128,8 @@ making
   </script>
 ```
 
-[_](https://zenn.dev/a24k/articles/20221012-wasmple-simple-console)
-[_](https://zenn.dev/a24k/articles/20221107-wasmple-passing-buffer)
+[Rust で WebAssembly から console.log](https://zenn.dev/a24k/articles/20221012-wasmple-simple-console)
+[WebAssembly と JavaScript との間で自在にデータをやりとり](https://zenn.dev/a24k/articles/20221107-wasmple-passing-buffer)
 
 ## .NET WebAssembly Browser app
 

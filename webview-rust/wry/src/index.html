@@ -1,0 +1,11 @@
+<html>
+  <body>
+    <h1>Hello, World!</h1>
+    <button type=”button” onclick="onClickFunc()">click</button>
+  </body>
+  <script>
+    const onClickFunc = () =>{
+      window.ipc.postMessage("test, 1 ,2 ,3")
+    };
+  </script>
+</html>
