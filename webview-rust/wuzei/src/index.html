@@ -5,17 +5,23 @@
     <button type="button" onclick="onClickFunc2()">click_2</button>
   </body>
   <script>
-    const obj = {}
+    console.log("index.html")
+
     const onClickFunc1 = () =>{
-      const dst = { type : "test", payload : "hoge" }
+      const dst = { type : "message", payload : "hoge" }
       window.ipc.postMessage(JSON.stringify(dst))
     };
     const onClickFunc2 = () =>{
       const dst = { type : "test-2", payload : "hoge" }
       window.ipc.postMessage(JSON.stringify(dst))
     };
-    // obj.addEventListener('test', (e) => {
-    //   console.log(e);
-    // }, false);
+    console.log(window)
+    console.log(window.ipc)
+    window.chrome.webview.addEventListener('message', (e) => {
+      console.log('message', e)
+    });
+    window.chrome.webview.addEventListener('propertyChanged', (e) => {
+      console.log('propertyChanged', e)
+    });
   </script>
 </html>

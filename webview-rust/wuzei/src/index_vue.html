@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <div>test</div>
+    <div id ="app">
+      <div>uri : {{uri}}</div>
+      <div>title<input type="text" v-model="title"></div>
+      <div>date<input type="text" v-model="date"></div>
+      <div>path : {{path}}</div>
+    </div>
+    <custom-tag name="hoge"/>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => console.log("DOMContentLoaded") );
+      window.addEventListener("load", () => console.log("load"));
+    </script>
+  </body>
+  <script>
+    console.log("index.html")
+
+    const onClickFunc1 = () =>{
+      const dst = { type : "message", payload : "hoge" }
+      window.ipc.postMessage(JSON.stringify(dst))
+    };
+    const onClickFunc2 = () =>{
+      const dst = { type : "test-2", payload : "hoge" }
+      window.ipc.postMessage(JSON.stringify(dst))
+    };
+    console.log(window)
+    console.log(window.ipc)
+    window.chrome.webview.addEventListener('message', (e) => {
+      console.log('message', e)
+    });
+    window.chrome.webview.addEventListener('propertyChanged', (e) => {
+      console.log('propertyChanged', e)
+    });
+  </script>
+</html>

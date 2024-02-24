@@ -1,8 +1,5 @@
 # WASM
 
-[暗黙の型変換](https://wasm-dev-book.netlify.app/hello-wasm.html#%E6%9A%97%E9%BB%99%E3%81%AE%E5%9E%8B%E5%A4%89%E6%8F%9B)
-[linear-memory](https://rustwasm.github.io/docs/book/what-is-webassembly.html#linear-memory)
-
 ## wasm_vanilla
 
 ### build
@@ -163,3 +160,8 @@ Or you can start any static file server from the AppBundle directory:
 ps> dotnet tool install dotnet-serve
 ps> dotnet serve -d:bin/$(Configuration)/net7.0/browser-wasm/AppBundle
 ```
+
+## reference
+
+[暗黙の型変換](https://wasm-dev-book.netlify.app/hello-wasm.html#%E6%9A%97%E9%BB%99%E3%81%AE%E5%9E%8B%E5%A4%89%E6%8F%9B)
+[linear-memory](https://rustwasm.github.io/docs/book/what-is-webassembly.html#linear-memory)

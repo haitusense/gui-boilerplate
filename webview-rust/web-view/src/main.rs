@@ -16,8 +16,8 @@ fn main() {
           Ok(())
         }
         "test_two" => {
-            // Invoke a JavaScript function!
-            webview.eval(&format!("myFunction({}, {})", 123, 456))
+          // Invoke a JavaScript function!
+          webview.eval(&format!("myFunction({}, {})", 123, 456))
         }
         _ => Ok(()),
       }

@@ -61,7 +61,7 @@ MainView.cs -> MainViewModel.cs -> MainModel.cs -> index.html -> app.js
 **Main Process (MainModel.cs/MainViewModel.cs/MainView.cs)**
 
 ```cs
-await webView2.EnsureCoreWebView2Async(null);
+await webView2.EnsureCoreWebView2Async(null); 
 await webView2.CoreWebView2.ExecuteScriptAsync();
 webView.CoreWebView2.Navigate(uri.ToString());
 
@@ -85,6 +85,35 @@ window.chrome.webview.addEventListener('message', (e) => {});
 // two-way (Renderer to Main)
 var result = await chrome.webview.hostObjects.myHostObject.GetString();
 ```
+
+### Wry
+
+**Main Process**
+
+```rust
+.with_initialization_script() // = webView2.EnsureCoreWebView2Async
+.with_html() // = webView.CoreWebView2.Navigate
+
+// send
+webview.evaluate_script(&*format!("window.chrome.webview.dispatchEvent(raisedEvent)")); // = webView2.CoreWebView2.ExecuteScriptAsync()
+// receive
+WebViewBuilder::new(window)?.with_ipc_handler() 
+
+// two-way (Renderer to Main)
+webview.evaluate_script_with_callback(js, callback)
+```
+
+**Renderer Process**
+
+```js
+// send
+window.ipc.postMessage(JSON.stringify(dst)) // = window.chrome.webview.postMessage(json)
+// receive
+window.chrome.webview.addEventListener('hoge', (e) => {});
+```
+
+
+
 
 
 
