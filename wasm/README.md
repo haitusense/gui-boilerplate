@@ -101,7 +101,7 @@ sum = instance.exports.accumulate(0, 10);
 console.log(sum);
 ```
 
-## wasm_vanilla
+## wasm_pack
 
 ### build
 
