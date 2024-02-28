@@ -25,7 +25,7 @@ GUIの開発において、portability(可搬性)を上げるにはどうする�
 
 **native applicationでのGUIライブラリ**
 
-native applicationに対し、web資産の活用・流用としてElectron/WebViewのような技術がある
+native applicationに対し、web資産の活用・流用/cross-platformとしてElectron/WebViewのような技術がある
 
 - Windows GUI 
   - GTK, Qt, WinForms, WPF, UWP, MAUI
@@ -35,37 +35,17 @@ native applicationに対し、web資産の活用・流用としてElectron/WebVi
   - native app向けGUI Framework, cross-platform
   - GUIにChromium+Node.js = web技術の転用
   - Slack, Discord, GitHub Desktop, Atom, VScode
+- Tauri
+  - rust製, Electronの代替を目指す
+  - ChromiumではなくWebViewを使用
 - WebView
   - Android/iOSのcomponent(OSの機能)
   - スマートフォンapp, Social-network gameなど
   - browser in app
-- Tauri
-  - rust製, Electronの代替を目指す
-  - ChromiumではなくWebViewを使用
 
 **JavaScript Framework**
 
 WebViewを使用するとして、JavaScript側でどのFrameworkを使用するか
-
-- React
-  - CDN動く
-  - デカい
-  - Component-Based/Virtual DOM/JSX
-- Angular
-  - No CDN
-  - RxJS採用
-- Vue.js
-  - CDN動く
-  - MVVM
-  - SPAに向いてる
-  - template tag = HTML5ベース
-- Riot
-  - CDN動く
-  - 軽量
-  - 双方向データバインディングはX
-  - 人気がない
-
-c#(wpf)やrust(wry)上に乗せることを考慮し以下の理由からVue.jsを選択
 
 - CDN
   - native code側で実行をコントロールしやすい
@@ -73,53 +53,73 @@ c#(wpf)やrust(wry)上に乗せることを考慮し以下の理由からVue.js�
 - MVVM
 - HTML5ベース
 
+- React (nmp trend Jan 2024, 23,000k)
+  - CDN動く
+  - デカい
+  - Component-Based/Virtual DOM/JSX
+- Angular (447k)
+  - No CDN
+  - RxJS採用
+- Vue.js (4,440k)
+  - CDN動く
+  - MVVM
+  - SPAに向いてる
+  - template tag = HTML5ベース
+- Riot (4k)
+  - CDN動く
+  - 軽量
+  - 双方向データバインディングはX
+  - 人気がない
+
+c#(wpf)やrust(wry)上に乗せることを考慮しVue.jsを選択
+
 ## 2. GUI Architecture / Design Pattern
 
 ### 2.1. GUI Architecture
 
 ```
- MVC (Original)
+MVC (Original)
 
- ┌────┐          Update             ┌─────┐
- │View│◄────────────────────────────┤     │
- └────┘                             │Model│
-   Event   ┌──────────┐ Manipulates │     │
-  ────────►│Controller├────────────►│     │
-           └──────────┘             └─────┘
-                                    pt. logic
-                                    biz logic
-   ViewとModelが密結合
-   presentation logicはV or M, Viewが肥大化
+┌────┐          Update             ┌─────┐
+│View│◄────────────────────────────┤     │
+└────┘                             │Model│
+  Event   ┌──────────┐ Manipulates │     │
+ ────────►│Controller├────────────►│     │
+          └──────────┘             └─────┘
+                                   pt. logic
+                                   biz logic
+  ViewとModelが密結合
+  presentation logicはV or M, Viewが肥大化
 
- MVP (PassiveView + Observer)
+MVP (PassiveView + Observer)
 
- ┌────┐ Event    ┌─────────┐ Update ┌─────┐
- │    ├─────────►│         ├───────►│     │
- │View│ Update   │Presenter│ Notify │Model│
- │    │◄─────────┤         │◄─ - - -│     │
- └────┘          └─────────┘        └─────┘
-                  pt. logic          biz logic
+┌────┐ Event    ┌─────────┐ Update ┌─────┐
+│    ├─────────►│         ├───────►│     │
+│View│ Update   │Presenter│ Notify │Model│
+│    │◄─────────┤         │◄─ - - -│     │
+└────┘          └─────────┘        └─────┘
+                 pt. logic          biz logic
 
-    Presenter -> View の参照がある
+  Presenter -> View の参照がある
 
- MVVM
+MVVM
 
- ┌────┐ DataBind ┌─────────┐ Update ┌─────┐
- │    │◄────────►│         ├───────►│     │
- │View│ (Notify) │ViewModel│ Notify │     │
- │    │◄─ - - - -│         │◄─ - - -│     │
- └────┘          └─────────┘        │     │
-                                    │Model│
- ┌────┐ DataBind ┌─────────┐ Update │     │
- │    │◄────────►│         ├───────►│     │
- │View│ (Notify) │ViewModel│ Notify │     │
- │    │◄─ - - - -│         │◄─ - - -│     │
- └────┘          └─────────┘        └─────┘
-                  pt. logic          biz logic
-                                     Data
-　  依存の方向 V -> VM, VM -> M
-    DataBinding前提
-    揮発性
+┌────┐ DataBind ┌─────────┐ Update ┌─────┐
+│    │◄────────►│         ├───────►│     │
+│View│ (Notify) │ViewModel│ Notify │     │
+│    │◄─ - - - -│         │◄─ - - -│     │
+└────┘          └─────────┘        │     │
+                                   │Model│
+┌────┐ DataBind ┌─────────┐ Update │     │
+│    │◄────────►│         ├───────►│     │
+│View│ (Notify) │ViewModel│ Notify │     │
+│    │◄─ - - - -│         │◄─ - - -│     │
+└────┘          └─────────┘        └─────┘
+                 pt. logic          biz logic
+                                    Data
+  依存の方向 V -> VM, VM -> M
+  DataBinding前提
+  揮発性
 ```
 
 ```mermaid
@@ -661,4 +661,122 @@ this.OneWay = this.TwoWay.Select(s => s != null ? s.ToUpper() : null).ToReadOnly
 
 ```
 
+### 4.6. Rustで置き換える際のあれこれ
 
+- Global Variable
+  - static mut : ```unsafe { }```必要
+  - lazy_static : 古い
+  - once_cell : 新しめ
+    - std::sync::OnceLock : Setはブロックされる
+    - once_cell::sync::OnceCell : Lockはブロックされない
+- Reference Variable
+  - Box : ヒープ上に割り当て
+  - Rc : 参照カウントされた共有スマートポインタ
+  - Arc : スレッド安全な参照カウントされた共有スマートポインタ
+  - std::rc::Weak : 弱参照版Rc(循環参照対策)
+  - std::sync::Weak : 弱参照版Arc
+  - dyn Trait : トレイトオブジェクト
+- Mutex
+  - Mutex : 読み書き関わらず1人だけ
+  - RwLock : 書き込みは1人 読み込みだけ複数人に許す
+
+-> 組み合わせでSingletonなど
+
+**Global Variable**
+
+```rust
+static LARGE_TEXT: Lazy<String> = once_cell::sync::Lazy::new(|| load_large_text());
+fn main() {
+  println!("{}", *LARGE_TEXT);
+}
+```
+
+**非同期**
+
+```rust
+let counter = Arc::new(Mutex::new(0));
+let thread = thread::spawn({
+  let counter = counter.clone();
+  move || {
+    for _ in 0..100000 {
+      let mut counter = counter.lock().unwrap();
+      if *counter % 2 == 0 { *counter += 1; }
+    }
+  }
+});
+```
+
+**イミュータブルデータ構造**
+
+```rust
+#[derive(Debug)]
+pub struct Stack<T>(Option<Rc<(T, Stack<T>)>>);
+
+// O(1) コピー
+impl<T> Clone for Stack<T> {
+  fn clone(&self) -> Self {
+    Self(self.0.clone())
+  }
+}
+
+impl<T> Stack<T> {
+  pub fn new() -> Self {
+    Self(None)
+  }
+
+  pub fn push(&mut self, x: T) {
+    let this = Self(self.0.take());
+      self.0 = Some(Rc::new((x, this)));
+    }
+
+  pub fn peek(&self) -> Option<&T> {
+    if let Some(rc) = &self.0 {
+      Some(&rc.0)
+    } else {
+      None
+    }
+  }
+}
+
+impl<T: Clone> Stack<T> {
+  pub fn pop(&mut self) -> Option<T> {
+    let this = Self(self.0.take());
+    if let Some(rc) = this.0 {
+      let (head, tail) = Rc::try_unwrap(rc).unwrap_or_else(|rc| (*rc).clone());
+      *self = tail;
+      Some(head)
+    } else {
+      None
+    }
+  }
+}
+```
+
+**Singleton**
+
+```rust
+#[derive(Default)]
+struct Config {
+  pub debug_mode: bool,
+}
+impl Config {
+  pub fn current() -> Arc<Config> {
+    CURRENT_CONFIG.with(|c| c.read().unwrap().clone())
+  }
+  pub fn make_current(self) {
+    CURRENT_CONFIG.with(|c| *c.write().unwrap() = Arc::new(self))
+  }
+}
+thread_local! {
+  static CURRENT_CONFIG: RwLock<Arc<Config>> = RwLock::new(Default::default());
+}
+
+fn main() {
+  // 設定を書き換え
+  Config { debug_mode: true }.make_current();
+  // 設定を参照
+  if Config::current().debug_mode {
+    // do something
+  }
+}
+```

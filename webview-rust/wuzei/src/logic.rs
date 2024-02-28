@@ -1,3 +1,5 @@
+
+use super::builder::UserEvent;
 use colored::Colorize;
 use anyhow::bail;
 use serde::{Serialize, Deserialize};
@@ -8,42 +10,6 @@ use wry::{
     event_loop::{ControlFlow, EventLoopProxy},
   },
 };
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct Message{
-  #[serde(rename = "type")]
-  pub type_name: String,
-  pub payload: String
-}
-
-#[derive(Debug)]
-pub enum UserEvent {
-  Message(String),
-  SubProcess(String),
-  NewEvent(String, String)
-}
-
-
-pub fn ipc_handler(proxy:&EventLoopProxy<UserEvent>, arg:String) {
-  let src: Message = match serde_json::from_str::<Message>(&arg) {
-    Ok(n) => n,
-    Err(e) => {
-      println!("err {e}");
-      Message::default()
-    }
-  };
-  match src.type_name.as_str() {
-    "test" => {
-      println!("{src:?}");
-    },
-    "test-2" => {
-      println!("{src:?}");
-    },
-    "message" => { let _ = proxy.send_event(UserEvent::Message(src.payload)).unwrap(); },
-    "subprocess" => { let _ = proxy.send_event(UserEvent::SubProcess(src.payload)).unwrap(); },
-    _ => println!("{src:?}")
-  };
-}
 
 pub fn event_handler(webview: &WebView, event:Event<'_, UserEvent>, control_flow:&mut ControlFlow) {
   match event {
@@ -57,33 +23,39 @@ pub fn event_handler(webview: &WebView, event:Event<'_, UserEvent>, control_flow
       let _ = webview.evaluate_script(&*format!("console.log('{dst}')"));
     },
     Event::UserEvent(UserEvent::NewEvent(key, payload)) => {
-      match &payload {
-        n if n.starts_with("https://") => {
-          println!("https : {n:?}");
-        },
-        n if n.starts_with("file://") => {
-          println!("file : {n:?}");
-        },
-        _=> { println!("{payload:?}"); }
-      };
+      // match &payload {
+      //   n if n.starts_with("https://") => {
+      //     println!("https : {n:?}");
+      //   },
+      //   n if n.starts_with("file://") => {
+      //     println!("file : {n:?}");
+      //   },
+      //   _=> { println!("{payload:?}"); }
+      // };
       let dst = indoc::formatdoc! {r##"
-        const raisedEvent = new CustomEvent('{key}', {{
-          bubbles: false,
-          cancelable: false,
-          detail: {{ payload : '{payload}' }}
-        }});
-        window.chrome.webview.dispatchEvent(raisedEvent);
+        (()=>{{
+          const raisedEvent = new CustomEvent('{key}', {{
+            bubbles: false,
+            cancelable: false,
+            detail: {{ payload : '{payload}' }}
+          }});
+          window.chrome.webview.dispatchEvent(raisedEvent);
+        }})();
       "##};
-      let _ = webview.evaluate_script(&*dst);
+      let result = webview.evaluate_script(&*dst);
+      println!("{result:?}");
       // webview.evaluate_script_with_callback(js, callback)
     },
-    Event::UserEvent(UserEvent::SubProcess(e)) => {
-      println!("{} {}", "message".green(), e);
-      let dst = std::process::Command::new("powershell")
-        .args(&["dotnet", "script test.csx"])
-        .spawn().unwrap()
-        .wait().unwrap();
-      println!("Exit {dst:?}");
+    Event::UserEvent(UserEvent::SubProcess(args)) => {
+      println!("{} {:?}", "sub process".green(), args);
+      match serde_json::from_value::<Vec<String>>(args) {
+        Err(e) => { println!("{} {:?}", "sub process".red(), e);},
+        Ok(n) => {
+          let _dst = std::process::Command::new("powershell")
+            .args(&n)
+            .spawn().unwrap();
+        },
+      };
     },
     Event::WindowEvent {
       event: WindowEvent::CloseRequested,
@@ -129,7 +101,7 @@ fn run_powershell<F>(func: F) -> anyhow::Result<std::process::ExitStatus> where 
 #[allow(dead_code)]
 pub fn back_ground_worker(proxy:&EventLoopProxy<UserEvent>) {
   loop {
-      let now = std::time::SystemTime::now()
+    let now = std::time::SystemTime::now()
       .duration_since(std::time::SystemTime::UNIX_EPOCH)
       .unwrap()
       .as_millis();
@@ -149,7 +121,8 @@ enum ReturnEnum {
 pub async fn back_ground_worker_pipe(proxy:&EventLoopProxy<UserEvent>, pipename:String) -> anyhow::Result<()> {
   loop {
     match pipe(format!(r##"\\.\pipe\{pipename}"##).as_str()).await {
-      Ok(ReturnEnum::Ok(n)) => { 
+      Ok(ReturnEnum::Ok(n)) => {
+        println!("{} {}","pipe received".green(), n);
         if proxy.send_event(UserEvent::NewEvent("namedPipe".to_string(), format!("{n}"))).is_err() { bail!("proxy err") }
       },
       Ok(ReturnEnum::Continue) => { continue; },
@@ -161,7 +134,7 @@ pub async fn back_ground_worker_pipe(proxy:&EventLoopProxy<UserEvent>, pipename:
 async fn pipe(pipename:&str) -> anyhow::Result<ReturnEnum> {
   let server : NamedPipeServer = ServerOptions::new().create(pipename).unwrap();
   let _connected = server.connect().await?;
-  println!("connect");
+  // println!("connect");
   let ready = server.ready(Interest::READABLE).await?;
   let mut dst = String::new();
   let mut buf = vec![0; 1024];
@@ -175,7 +148,7 @@ async fn pipe(pipename:&str) -> anyhow::Result<ReturnEnum> {
   let ready = server.ready(Interest::WRITABLE).await?;
   if ready.is_writable() {
     match server.try_write(b"Ok\r\n") {
-      Ok(n) => { println!("write {} bytes", n); }
+      Ok(_) => { /* println!("write {} bytes", n);*/ }
       Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => { return Ok(ReturnEnum::Continue); }
       Err(e) => bail!(e)
     }

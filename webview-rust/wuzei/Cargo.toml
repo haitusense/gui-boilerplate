@@ -15,11 +15,14 @@ anyhow = "*"
 thiserror = "*"
 colored = "*"
 indoc = "*"
+include_dir = "0.7.3"
 
 tempfile = "3.5.0"
 clap = { version = "4.5.1", features = ["derive",] }
 image = "0.24.9"
 tokio = { version = "1.36.0", features = ["full"] }
+
+# use icon
 
 [target.'cfg(windows)'.build-dependencies]  
 windres = "0.2.2"

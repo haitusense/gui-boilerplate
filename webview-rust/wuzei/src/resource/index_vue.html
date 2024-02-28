@@ -5,12 +5,14 @@
   <body>
     <div>test</div>
     <div id ="app">
+      <div>status : {{busy}}</div>
       <div>uri : {{uri}}</div>
       <div>title<input type="text" v-model="title"></div>
       <div>date<input type="text" v-model="date"></div>
       <div>path : {{path}}</div>
       <button @click="message">message</button>
-      <button @click="remove">削除</button>
+      <button @click="subprocess">subprocess</button>
+      <button @click="cp">custom-protocol</button>
     </div>
     <custom-tag name="hoge"/>
     <script>
@@ -41,7 +43,7 @@
     const app = window.Vue.createApp({
       setup() {
         const { fromEvent, filter } = window.rxjs;
-
+        const busy = window.Vue.ref(false);
         const uri = window.Vue.ref('null');
         const title = window.Vue.ref('null');
         const date = window.Vue.ref('null');
@@ -51,7 +53,18 @@
           const dst = { type : "message", payload : "hoge" }
           window.ipc.postMessage(JSON.stringify(dst))
         }
+        const subprocess = () => {
+          const dst = { type : "process", payload : ["dotnet", "script ./test.csx" ] }
+          window.ipc.postMessage(JSON.stringify(dst))
+        }
+        const cp = async () => {
+          // WindowsではカスタムURLスキームは使えず，サブドメインにプロトコル書くらしい．
+          let response = await fetch("http://wuzei.localhost/data", { method: "GET", })
+          const reader = response.body.getReader();
+          const chunk = await reader.read();
+          console.log("fetch", chunk)
 
+        }
         const newWindowReq$ = fromEvent(window.chrome.webview, 'newWindowReq');
         newWindowReq$.subscribe(async (e) => {
           // window.Wvvm.dispatch({ type : "dragAndDrop", payload: [e.detail.Uri] })
@@ -62,10 +75,22 @@
         });
         const namedPipe$ = fromEvent(window.chrome.webview, 'namedPipe');
         namedPipe$.subscribe(async (e) => {
-          console.log('namedPipe', e.detail)
-        });
+          let src = JSON.parse(e.detail.payload);
+          console.log('namedPipe', src);
+          switch (src.type) {
+            case 'status':
+              busy.value = src.payload;
+              break;
+            case 'postjson':
+              uri.value = src.payload.url;
+              title.value = src.payload.title;
+              date.value = src.payload.date;
+              break;
+            default:
+          }
 
-        return {uri, title, date, path, message}
+        });
+        return {busy, uri, title, date, path, message, subprocess, cp}
       }
     }).mount('#app');
   </script>
